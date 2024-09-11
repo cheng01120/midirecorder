@@ -10,9 +10,9 @@ QVector<cxxmidi::Event> events;
 ElapsedTimer elapsed_timer;
 unsigned now = 0;;
 unsigned bpm = 120;
+unsigned char channel = 0;
 
 #define Us2dt(us) cxxmidi::converters::Us2dt(us, 60000000/bpm, TIME_DIVISION)
-
 
 void mycallback( double deltatime, std::vector< unsigned char > *recv, void *userData )
 {
@@ -21,6 +21,11 @@ void mycallback( double deltatime, std::vector< unsigned char > *recv, void *use
 
     cxxmidi::Message msg;
     for(int i = 0; i < recv->size(); i++) msg.push_back(recv->at(i));
+		if(msg.IsVoiceCategory())
+		{
+			unsigned char st = msg[0];
+			if( (st & 0x0f) != channel) return;
+		}
 
     unsigned elapsed = elapsed_timer.elapsed();
     int delta = elapsed - now;
@@ -31,7 +36,7 @@ void mycallback( double deltatime, std::vector< unsigned char > *recv, void *use
 }
 
 
-ElapsedTimer::ElapsedTimer() : frequency_(0), start_(0)
+ElapsedTimer::ElapsedTimer() : frequency_(1), start_(0)
 {
     LARGE_INTEGER li;
     if(!QueryPerformanceFrequency(&li)) qWarning("QueryPerformanceFrequency failed!");
@@ -65,7 +70,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->recordButton->setIcon(QIcon(":/images/rec_green.png"));
 
     unsigned n = findMidiPorts();
-    if(n!=0) {
+    if(n) {
     	  this->statusBar()->showMessage("Ready.");
         ui->recordButton->setEnabled(true);
     }
@@ -111,7 +116,7 @@ void MainWindow::on_recordButton_clicked()
         elapsed_timer.start();
         now = 0;
         QString s;
-        QTextStream(&s) << "Recording at BPM " << bpm << "...";
+        QTextStream(&s) << "Recording at BPM " << bpm << " channel " << channel << "...";
         this->statusBar()->showMessage(s);
     }
     else {
