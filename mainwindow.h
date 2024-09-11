@@ -2,12 +2,22 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QElapsedTimer>
 #include <QFileDialog>
 #include <RtMidi.h>
 #include <cxxmidi/file.hpp>
 
 #pragma comment(lib, "rtmidi")
+
+class ElapsedTimer {
+public:
+    ElapsedTimer();
+    void start();
+    UINT64 elapsed();
+
+private:
+    UINT64 frequency_;
+    UINT64 start_;
+};
 
 
 QT_BEGIN_NAMESPACE
